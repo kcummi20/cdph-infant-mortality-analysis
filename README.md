@@ -1,7 +1,6 @@
 # Racial/Ethnic Disparities in Infant Mortality: A Data Analysis with R
 
 ### Author: Katie Cummings
-### Professor: Zhang
 ### Course: R for Programming
 ### Date: 6 May 2022
 
