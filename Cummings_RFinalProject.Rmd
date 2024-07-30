@@ -1,0 +1,335 @@
+---
+title: "Racial Disparities in Infant Mortality"
+author: "Katie Cummings"
+date: "5/4/2022"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages}
+#install.packages("tidyverse")
+#install.packages("rlang") 
+#install.packages("dplyr")
+library(tidyverse)
+library(magrittr)
+library(ggplot2)
+```
+
+```{r infant mortality rates}
+total_im <- read.csv("/Users/katie/Desktop/R_Project/Total_InfantMortality.csv", header=TRUE) # read infant mortality rates
+  
+race_im <- read.csv("/Users/katie/Desktop/R_Project/Race_InfantMortality.csv", header=TRUE) # read infant mortality rates separated by race/ethnicity
+```
+
+```{r prenatal care rate}
+total_pc <- read.csv("/Users/katie/Desktop/R_Project/Total_PrenatalCare.csv", header=TRUE) # read early and adequate prenatal care rates
+  
+race_pc <- read.csv("/Users/katie/Desktop/R_Project/Race_PrenatalCare.csv", header=TRUE) # read early and adequate prenatal care rates separated by race/ethnicity
+```
+
+```{r low birth weight rate}
+total_lbw <- read.csv("/Users/katie/Desktop/R_Project/Total_LowBirthWeight.csv", header=TRUE) # read low birth weight rates
+  
+race_lbw <- read.csv("/Users/katie/Desktop/R_Project/Race_LowBirthWeight.csv", header=TRUE) # read low birth weight rates separated by race/ethnicity
+```
+
+```{r preterm birth rate}
+total_pb <- read.csv("/Users/katie/Desktop/R_Project/Total_PretermBirth.csv", header=TRUE) # read preterm birth rates
+  
+race_pb <- read.csv("/Users/katie/Desktop/R_Project/Race_PretermBirth.csv", header=TRUE) # read preterm birth rates separated by race/ethnicity
+```
+
+```{r total plots}
+# shown in four separate plots because statistics reported as different ratios (per 1000 births versus percentage of births)
+par(mfrow=c(2,2))
+plot(total_im, type='o', xlab= 'Year', ylab= 'per 1,000 live births', main= 'Infant Mortality Rate')
+plot(total_pc, type='o', xlab= 'Year', ylab= '% of births', main= 'Early and Adequate Prenatal Care Rate')
+plot(total_lbw, type='o', xlab= 'Year', ylab= '% of births', main= 'Low Birthweight Rate')
+plot(total_pb, type='o', xlab= 'Year', ylab= '% of births', main= 'Preterm Birth Rate')
+```
+
+```{r total column names}
+# change column names
+colnames(total_im) <- c('Year', 'Infant.Mortality')
+colnames(total_pc) <- c('Year', 'Prenatal.Care')
+colnames(total_lbw) <- c('Year', 'Low.Birthweight')
+colnames(total_pb) <- c('Year', 'Preterm.Birth')
+```
+
+```{r total percents to rates}
+total_pc %>% mutate(Prenatal.Care = (Prenatal.Care/100)*1000) # transform % of births to per 1000 births 
+total_lbw %>% mutate(Low.Birthweight = (Low.Birthweight/100)*1000) # transform % of births to per 1000 births 
+total_pb %>% mutate(Preterm.Birth = (Preterm.Birth/100)*1000) # transform % of births to per 1000 births 
+```
+
+```{r merge total data}
+total_compare <- Reduce(function(x,y) full_join(x = x, y = y, by = 'Year'), list(total_im, total_lbw, total_pb, total_pc)) # merge variables into one table (by year)
+
+# reshape data frame
+total_compare_ggp <- data.frame(x = total_compare$Year, y = c(total_compare$Infant.Mortality, total_compare$Low.Birthweight, total_compare$Preterm.Birth, total_compare$Prenatal.Care), group = c(rep("Infant.Mortality", nrow(total_compare)),  rep("Low.Birthweight", nrow(total_compare)), rep("Preterm.Birth", nrow(total_compare)), rep("Prenatal.Care", nrow(total_compare))))
+
+```
+
+```{r total longitudinal trends}
+# draw line graph to visualize and compare longitudinal trends
+total_ggp <- ggplot(total_compare_ggp, aes(x, y, col = group)) + geom_line()
+total_ggp + scale_color_discrete(name= "Indicators", breaks=c("Infant.Mortality", "Prenatal.Care", "Low.Birthweight", "Preterm.Birth"), labels=c("Infant Mortality", "Prenatal Care", "Low Birthweight", "Preterm Birth")) + xlab('Year') + ylab('per 1000 births') + ggtitle("Rates of Infant Mortality and Predictors")
+```
+
+```{r race column names}
+# change column names
+colnames(race_im) <- c('Year', 'Full.Population', 'Non.Hispanic.White', 'Non.Hispanic.Black', 'Asian.or.Pacific.Islander', 'Hispanic.or.Latino')
+colnames(race_pc) <- c('Year', 'Full.Population', 'Non.Hispanic.White', 'Non.Hispanic.Black', 'Asian.or.Pacific.Islander', 'Hispanic.or.Latino')
+colnames(race_lbw) <- c('Year', 'Full.Population', 'Non.Hispanic.White', 'Non.Hispanic.Black', 'Asian.or.Pacific.Islander', 'Hispanic.or.Latino')
+colnames(race_pb) <- c('Year', 'Full.Population', 'Non.Hispanic.White', 'Non.Hispanic.Black', 'Asian.or.Pacific.Islander', 'Hispanic.or.Latino')
+```
+
+```{r race percents to rates}
+race_lbw %>% mutate_each(funs(./100*1000), contains("."))
+race_pc %>% mutate_each(funs(./100*1000), contains("."))
+race_pb %>% mutate_each(funs(./100*1000), contains("."))
+```
+
+```{r race data frames}
+# reshape data frames
+race_im_ggp <- data.frame(x = race_im$Year, y = c(race_im$Full.Population, race_im$Non.Hispanic.White, race_im$Non.Hispanic.Black, race_im$Asian.or.Pacific.Islander, race_im$Hispanic.or.Latino), group = c(rep("Full.Population", nrow(race_im)), rep("Non.Hispanic.White", nrow(race_im)), rep("Non.Hispanic.Black", nrow(race_im)), rep("Asian.or.Pacific.Islander", nrow(race_im)), rep("Hispanic.or.Latino", nrow(race_im))))
+
+race_lbw_ggp <- data.frame(x = race_lbw$Year, y = c(race_lbw$Full.Population, race_lbw$Non.Hispanic.White, race_lbw$Non.Hispanic.Black, race_lbw$Asian.or.Pacific.Islander, race_lbw$Hispanic.or.Latino), group = c(rep("Full.Population", nrow(race_lbw)), rep("Non.Hispanic.White", nrow(race_lbw)), rep("Non.Hispanic.Black", nrow(race_lbw)), rep("Asian.or.Pacific.Islander", nrow(race_lbw)), rep("Hispanic.or.Latino", nrow(race_lbw))))
+
+race_pb_ggp <- data.frame(x = race_pb$Year, y = c(race_pb$Full.Population, race_pb$Non.Hispanic.White, race_pb$Non.Hispanic.Black, race_pb$Asian.or.Pacific.Islander, race_pb$Hispanic.or.Latino), group = c(rep("Full.Population", nrow(race_pb)), rep("Non.Hispanic.White", nrow(race_pb)), rep("Non.Hispanic.Black", nrow(race_pb)), rep("Asian.or.Pacific.Islander", nrow(race_pb)), rep("Hispanic.or.Latino", nrow(race_pb))))
+
+race_pc_ggp <- data.frame(x = race_pc$Year, y = c(race_pc$Full.Population, race_pc$Non.Hispanic.White, race_pc$Non.Hispanic.Black, race_pc$Asian.or.Pacific.Islander, race_pc$Hispanic.or.Latino), group = c(rep("Full.Population", nrow(race_pc)), rep("Non.Hispanic.White", nrow(race_pc)), rep("Non.Hispanic.Black", nrow(race_pc)), rep("Asian.or.Pacific.Islander", nrow(race_pc)), rep("Hispanic.or.Latino", nrow(race_pc))))
+```
+
+```{r im and race}
+# draw line graph to compare infant mortality trends by race
+im_ggp <- ggplot(race_im_ggp, aes(x, y, col = group)) + geom_line()
+im_ggp + scale_color_discrete(name= "Indicators", breaks=c("Full.Population", "Non.Hispanic.White", "Non.Hispanic.Black", "Asian.or.Pacific.Islander", "Hispanic.or.Latino"), labels=c("Full Population", "Non-Hispanic White", "Non-Hispanic Black", "Asian or Pacific Islander", "Hispanic or Latino")) + xlab('Year') + ylab('per 1000 births') + ggtitle("Rates of Infant Mortality by Race")
+```
+
+```{r im descriptive statistics by race}
+# mean infant mortality by race
+cat("Average Infant Deaths per 1000 Births in a given year, separated by Race/Ethnicity:")
+cat(sep="\n \n")
+cat(sep="\n \n")
+cat("Full Population:", mean(race_im$Full.Population))
+cat(sep="\n \n")
+cat("Non-Hispanic White:", mean(race_im$Non.Hispanic.White))
+cat(sep="\n \n")
+cat("Non-Hispanic African American:", mean(race_im$Non.Hispanic.Black))
+cat(sep="\n \n")
+cat("Asian or Pacific Islander:", mean(race_im$Asian.or.Pacific.Islander))
+cat(sep="\n \n")
+cat("Hispanic or Latino:", mean(race_im$Hispanic.or.Latino))
+cat(sep="\n \n")
+cat(sep="\n \n")
+
+cat("Average Low Birth Weight % in a given year, separated by Race/Ethnicity:")
+cat(sep="\n \n")
+cat(sep="\n \n")
+cat("Full Population:", mean(race_lbw$Full.Population))
+cat(sep="\n \n")
+cat("Non-Hispanic White:", mean(race_lbw$Non.Hispanic.White))
+cat(sep="\n \n")
+cat("Non-Hispanic African American:", mean(race_lbw$Non.Hispanic.Black))
+cat(sep="\n \n")
+cat("Asian or Pacific Islander:", mean(race_lbw$Asian.or.Pacific.Islander))
+cat(sep="\n \n")
+cat("Hispanic or Latino:", mean(race_lbw$Hispanic.or.Latino))
+cat(sep="\n \n")
+cat(sep="\n \n")
+
+cat("Average Preterm Birth % in a given year, separated by Race/Ethnicity:")
+cat(sep="\n \n")
+cat(sep="\n \n")
+cat("Full Population:", mean(race_pb$Full.Population))
+cat(sep="\n \n")
+cat("Non-Hispanic White:", mean(race_pb$Non.Hispanic.White))
+cat(sep="\n \n")
+cat("Non-Hispanic African American:", mean(race_pb$Non.Hispanic.Black))
+cat(sep="\n \n")
+cat("Asian or Pacific Islander:", mean(race_pb$Asian.or.Pacific.Islander))
+cat(sep="\n \n")
+cat("Hispanic or Latino:", mean(race_pb$Hispanic.or.Latino))
+cat(sep="\n \n")
+cat(sep="\n \n")
+
+cat("Average Access to Prenatal Care % in a given year, separated by Race/Ethnicity:")
+cat(sep="\n \n")
+cat(sep="\n \n")
+cat("Full Population:", mean(race_pc$Full.Population))
+cat(sep="\n \n")
+cat("Non-Hispanic White:", mean(race_pc$Non.Hispanic.White))
+cat(sep="\n \n")
+cat("Non-Hispanic African American:", mean(race_pc$Non.Hispanic.Black))
+cat(sep="\n \n")
+cat("Asian or Pacific Islander:", mean(race_pc$Asian.or.Pacific.Islander))
+cat(sep="\n \n")
+cat("Hispanic or Latino:", mean(race_pc$Hispanic.or.Latino))
+```
+
+```{r lbw and race}
+# draw line graph to compare low birth weight trends by race
+lbw_ggp <- ggplot(race_lbw_ggp, aes(x, y, col = group)) + geom_line()
+lbw_ggp + scale_color_discrete(name= "Indicators", breaks=c("Full.Population", "Non.Hispanic.White", "Non.Hispanic.Black", "Asian.or.Pacific.Islander", "Hispanic.or.Latino"), labels=c("Full Population", "Non-Hispanic White", "Non-Hispanic Black", "Asian or Pacific Islander", "Hispanic or Latino")) + xlab('Year') + ylab('per 1000 births') + ggtitle("Rates of Low Birthweight by Race")
+```
+
+```{r pb and race}
+# draw line graph to compare preterm birth trends by race
+pb_ggp <- ggplot(race_pb_ggp, aes(x, y, col = group)) + geom_line()
+pb_ggp + scale_color_discrete(name= "Indicators", breaks=c("Full.Population", "Non.Hispanic.White", "Non.Hispanic.Black", "Asian.or.Pacific.Islander", "Hispanic.or.Latino"), labels=c("Full Population", "Non-Hispanic White", "Non-Hispanic Black", "Asian or Pacific Islander", "Hispanic or Latino")) + xlab('Year') + ylab('per 1000 births') + ggtitle("Rates of Preterm Birth by Race")
+```
+
+```{r pc and race}
+# draw line graph to compare prenatal care trends by race
+pc_ggp <- ggplot(race_pc_ggp, aes(x, y, col = group)) + geom_line()
+pc_ggp + scale_color_discrete(name= "Indicators", breaks=c("Full.Population", "Non.Hispanic.White", "Non.Hispanic.Black", "Asian.or.Pacific.Islander", "Hispanic.or.Latino"), labels=c("Full Population", "Non-Hispanic White", "Non-Hispanic Black", "Asian or Pacific Islander", "Hispanic or Latino")) + xlab('Year') + ylab('per 1000 births') + ggtitle("Rates of Early and Adequate Prenatal Care by Race")
+```
+
+```{r im_lbw race plot}
+im_lbw_df <- Reduce(function(x,y) full_join(x = x, y = y, by = 'Year'), list(race_im, race_lbw)) # merge infant mortality and low birth weight tables 
+im_lbw <- subset(im_lbw_df, select = -c(Full.Population.x, Asian.or.Pacific.Islander.x, Hispanic.or.Latino.x, Full.Population.y, Asian.or.Pacific.Islander.y, Hispanic.or.Latino.y)) # only keep Non-Hispanic White and Non-Hispanic Black columns
+
+im_lbw <- cbind(stack(im_lbw[2:3]), stack(im_lbw[4:5])) 
+im_lbw['race'] <- c('white','white','white','white','white','white','white','white','white','white','white','white','white','white','white','white','white','white','black','black','black','black','black','black','black','black','black','black','black','black','black','black','black','black','black','black')
+colnames(im_lbw) <- c('Im.Rate', 'Infant.Mortality', 'Lbw.Rate', 'Low.Birthweight', 'Race')
+
+plot(x = jitter(im_lbw$Im.Rate[im_lbw$Race=='white'], factor = 2), 
+     y = im_lbw$Lbw.Rate[im_lbw$Race=='white'],
+     xlab = "Infant Mortality", 
+     ylab = "Low Birthweight",
+     xlim=c(0, max(im_lbw$Im.Rate)), 
+     ylim=c(0, max(im_lbw$Lbw.Rate)), 
+     col='magenta',
+     main = "Low Birthweight vs. Infant Mortality")
+
+points(x = jitter(im_lbw$Im.Rate[im_lbw$Race=='black'], factor = 2), 
+       y = im_lbw$Lbw.Rate[im_lbw$Race=='black'],
+       col='deepskyblue', pch=2)
+
+# regression line for non-Hispanic white demographic
+abline(lm(im_lbw$Lbw.Rate[im_lbw$Race=='white'] ~ im_lbw$Im.Rate[im_lbw$Race=='white']), 
+       col='magenta', lty=1, lwd=3)
+
+# regression line for non-Hispanic black demographic 
+abline(lm(im_lbw$Lbw.Rate[im_lbw$Race=='black'] ~ im_lbw$Im.Rate[im_lbw$Race=='black']), 
+       col='deepskyblue', lty=2, lwd=2)
+
+legend('bottomright', c('Non-Hispanic White', 'Non-Hispanic Black'), 
+       col=c('magenta','deepskyblue'), 
+       pch = c(1,2), lty=c(1,2))
+
+cor_im_lbw_white <- cor(im_lbw$Im.Rate[im_lbw$Race=='white'], im_lbw$Lbw.Rate[im_lbw$Race=='white'], method="pearson")
+```
+
+```{r im_lbw correlation coefficients}
+cor_im_lbw_white <- cor(im_lbw$Im.Rate[im_lbw$Race=='white'], im_lbw$Lbw.Rate[im_lbw$Race=='white'], method="pearson")
+cor_im_lbw_black <- cor(im_lbw$Im.Rate[im_lbw$Race=='black'], im_lbw$Lbw.Rate[im_lbw$Race=='black'], method="pearson")
+
+cat("Correlation between Infant Mortality and Low Birthweight for non-Hispanic white infants:", cor_im_lbw_white)
+cat(sep="\n \n")
+cat("Correlation between Infant Mortality and Low Birthweight for non-Hispanic African American infants:", cor_im_lbw_black) 
+
+## correlation coefficients are similar for both races, moderately correlated (between 0.5 and 0.7)
+```
+
+```{r im_pb race plot}
+im_pb_df <- Reduce(function(x,y) full_join(x = x, y = y, by = 'Year'), list(race_im, race_pb)) # merge infant mortality and low birth weight tables 
+im_pb <- subset(im_pb_df, select = -c(Full.Population.x, Asian.or.Pacific.Islander.x, Hispanic.or.Latino.x, Full.Population.y, Asian.or.Pacific.Islander.y, Hispanic.or.Latino.y)) # only keep Non-Hispanic White and Non-Hispanic Black columns
+
+im_pb <- cbind(stack(im_pb[2:3]), stack(im_pb[4:5])) 
+im_pb['race'] <- c('white','white','white','white','white','white','white','white','white','white','white','white','white','white','white','white','white','white','black','black','black','black','black','black','black','black','black','black','black','black','black','black','black','black','black','black')
+colnames(im_pb) <- c('Im.Rate', 'Infant.Mortality', 'Pb.Rate', 'Low.Birthweight', 'Race')
+
+plot(x = jitter(im_pb$Im.Rate[im_pb$Race=='white'], factor = 2), 
+     y = im_pb$Pb.Rate[im_pb$Race=='white'],
+     xlab = "Infant Mortality", 
+     ylab = "Preterm Birth",
+     xlim=c(0, max(im_pb$Im.Rate)), 
+     ylim=c(0, max(im_pb$Pb.Rate)), 
+     col='magenta',
+     main = "Preterm Birth vs. Infant Mortality")
+
+points(x = jitter(im_pb$Im.Rate[im_pb$Race=='black'], factor = 2), 
+       y = im_pb$Pb.Rate[im_pb$Race=='black'],
+       col='deepskyblue', pch=2)
+
+# regression line for non-Hispanic white demographic
+abline(lm(im_pb$Pb.Rate[im_pb$Race=='white'] ~ im_pb$Im.Rate[im_pb$Race=='white']), 
+       col='magenta', lty=1, lwd=3)
+
+# regression line for non-Hispanic black demographic 
+abline(lm(im_pb$Pb.Rate[im_pb$Race=='black'] ~ im_pb$Im.Rate[im_pb$Race=='black']), 
+       col='deepskyblue', lty=2, lwd=2)
+
+legend('bottomright', c('Non-Hispanic White', 'Non-Hispanic Black'), 
+       col=c('magenta','deepskyblue'), 
+       pch = c(1,2), lty=c(1,2))
+
+cor_im_pb_white <- cor(im_pb$Im.Rate[im_pb$Race=='white'], im_pb$Pb.Rate[im_pb$Race=='white'], method="pearson")
+```
+
+```{r im_pb correlation coefficients}
+cor_im_pb_white <- cor(im_pb$Im.Rate[im_pb$Race=='white'], im_pb$Pb.Rate[im_pb$Race=='white'], method="pearson")
+cor_im_pb_black <- cor(im_pb$Im.Rate[im_pb$Race=='black'], im_pb$Pb.Rate[im_pb$Race=='black'], method="pearson")
+
+cat("Correlation between Infant Mortality and Preterm Birth for non-Hispanic white infants:", cor_im_pb_white)
+cat(sep="\n \n")
+cat("Correlation between Infant Mortality and Preterm Birth for non-Hispanic African American infants:", cor_im_pb_black) 
+
+## correlation coefficients are similar for both races, moderately correlated (between 0.5 and 0.7); infant mortality has higher correlation with preterm birth than low birth weight (0.63 > 0.51, 0.59)
+```
+
+```{r im_pc race plot}
+im_pc_df <- Reduce(function(x,y) full_join(x = x, y = y, by = 'Year'), list(race_im, race_pc)) # merge infant mortality and low birth weight tables 
+im_pc <- subset(im_pc_df, select = -c(Full.Population.x, Asian.or.Pacific.Islander.x, Hispanic.or.Latino.x, Full.Population.y, Asian.or.Pacific.Islander.y, Hispanic.or.Latino.y)) # only keep Non-Hispanic White and Non-Hispanic Black columns
+
+im_pc <- cbind(stack(im_pc[2:3]), stack(im_pc[4:5])) 
+im_pc['race'] <- c('white','white','white','white','white','white','white','white','white','white','white','white','white','white','white','white','white','white','black','black','black','black','black','black','black','black','black','black','black','black','black','black','black','black','black','black')
+colnames(im_pc) <- c('Im.Rate', 'Infant.Mortality', 'Pc.Rate', 'Low.Birthweight', 'Race')
+
+plot(x = jitter(im_pc$Im.Rate[im_pc$Race=='white'], factor = 2), 
+     y = im_pc$Pc.Rate[im_pc$Race=='white'],
+     xlab = "Infant Mortality", 
+     ylab = "Early and Adequate Prenatal Care",
+     xlim=c(0, max(im_pc$Im.Rate)), 
+     ylim=c(0, 100), 
+     col='magenta',
+     main = "Early and Adequate Prenatal Care vs. Infant Mortality")
+
+points(x = jitter(im_pc$Im.Rate[im_pc$Race=='black'], factor = 2), 
+       y = im_pc$Pc.Rate[im_pc$Race=='black'],
+       col='deepskyblue', pch=2)
+
+# regression line for non-Hispanic white demographic
+abline(lm(im_pc$Pc.Rate[im_pc$Race=='white'] ~ im_pc$Im.Rate[im_pc$Race=='white']), 
+       col='magenta', lty=1, lwd=3)
+
+# regression line for non-Hispanic black demographic 
+abline(lm(im_pc$Pc.Rate[im_pc$Race=='black'] ~ im_pc$Im.Rate[im_pc$Race=='black']), 
+       col='deepskyblue', lty=2, lwd=2)
+
+legend('bottomright', c('Non-Hispanic White', 'Non-Hispanic Black'), 
+       col=c('magenta','deepskyblue'), 
+       pch = c(1,2), lty=c(1,2))
+
+cor_im_pc_white <- cor(im_pc$Im.Rate[im_pc$Race=='white'], im_pc$Pc.Rate[im_pc$Race=='white'], method="pearson")
+```
+
+```{r im_pc correlation coefficients}
+cor_im_pc_white <- cor(im_pc$Im.Rate[im_pc$Race=='white'], im_pc$Pc.Rate[im_pc$Race=='white'], method="pearson", use = "complete.obs")
+cor_im_pc_black <- cor(im_pc$Im.Rate[im_pc$Race=='black'], im_pc$Pc.Rate[im_pc$Race=='black'], method="pearson", use = "complete.obs")
+
+cat("Correlation between Infant Mortality and Early/Adequate Prenatal Care for non-Hispanic white infants:", cor_im_pc_white)
+cat(sep="\n \n")
+cat("Correlation between Infant Mortality and Early/Adequate Prenatal Care for non-Hispanic African American infants:", cor_im_pc_black) 
+
+## correlation coefficients are fairly different for each race--white = low correlation (between 0.3 and 0.5), black = little if any correlation (less than 0.3); infant mortality has lowest correlation with access to prenatal care, highest correlation with preterm birth
+## important to note that there is less prenatal care data, so correlation results are not as significant 
+```
